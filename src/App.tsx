@@ -3,8 +3,9 @@ import { CDNIcon } from '@alfalab/core-components/cdn-icon';
 import { Gap } from '@alfalab/core-components/gap';
 import { SliderInput, SliderInputProps } from '@alfalab/core-components/slider-input';
 import { Typography } from '@alfalab/core-components/typography';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { appSt } from './style.css';
+import { sendDataToGA } from './utils/events';
 
 const min = 500_000;
 const max = 1_300_000;
@@ -32,6 +33,7 @@ function calculatePayment(principal: number, interestRate: number, term: number)
 
 export const App = () => {
   const [value, setValue] = useState<number | string>(min);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange: SliderInputProps['onInputChange'] = (_, { value }) => {
     setValue(typeof value === 'string' ? Number(value.replace(/\s+/g, '')) : value);
@@ -47,6 +49,16 @@ export const App = () => {
   };
 
   const monthlyPayment = calculatePayment(numberValue, 0.24, 60).toFixed(0);
+
+  const submit = useCallback(() => {
+    setLoading(true);
+    sendDataToGA(numberValue).then(() => {
+      setLoading(false);
+
+      (window.location as unknown as string) =
+        'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fclick.alfabank.ru%2Fmobile-offers%2Fweb%2FPIL%2Fcredits%2FCH?isWebView=true';
+    });
+  }, [numberValue]);
 
   return (
     <>
@@ -97,12 +109,7 @@ export const App = () => {
       </div>
       <Gap size={96} />
       <div className={appSt.bottomBtn}>
-        <ButtonMobile
-          block
-          view="primary"
-          className={appSt.btn}
-          href="alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fclick.alfabank.ru%2Fmobile-offers%2Fweb%2FPIL%2Fcredits%2FCH?isWebView=true"
-        >
+        <ButtonMobile block view="primary" className={appSt.btn} onClick={submit} loading={loading}>
           <div className={appSt.btnContainer}>
             <div>
               <Typography.TitleResponsive font="system" tag="h2" view="xsmall" weight="bold">
